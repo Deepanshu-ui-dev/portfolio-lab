@@ -1,6 +1,15 @@
-# Portfolio Lab | NSE Trading & Risk Analytics
+# Portfolio Lab
 
-**A responsive Streamlit workspace for paper-trading NSE stocks, exploring portfolio risk, testing technical signals, and evaluating next-day direction models.**
+### Learn portfolio management by trading with virtual money
+
+Portfolio Lab is an interactive stock-market learning workspace. It lets you place simulated NSE trades, see how those trades change a portfolio, measure risk, test simple strategies, and inspect the data behind every result.
+
+It is designed to answer practical questions:
+
+- *What happens to my cash and holdings after a trade?*
+- *How diversified and risky is this portfolio?*
+- *Would a simple SMA or RSI rule have helped on historical data?*
+- *Can I trust the data and understand how each metric was calculated?*
 
 [![Python 3.11](https://img.shields.io/badge/python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.40.1-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
@@ -25,9 +34,37 @@
   <a href="#quick-start">Run locally</a>
 </p>
 
-## Why Portfolio Lab?
+## Start here
 
-Portfolio Lab combines a practical trading interface with transparent analytics. Every order is simulated in SQLite, every price row keeps its provenance, and every model result is evaluated on a chronological hold-out period rather than presented as a prediction or recommendation.
+### 1. Open the Overview
+
+Use the sidebar to move between the six workspace pages. The Overview page explains the app and links to the main workflows.
+
+### 2. Explore the dashboard
+
+Check virtual cash, portfolio value, P&L, holdings, allocation, and market movers before placing an order.
+
+### 3. Place a practice trade
+
+Open **Virtual Trading**, choose a ticker, select Buy or Sell, enter a quantity, review the brokerage estimate, and submit the order. The app validates cash and holdings before changing the SQLite portfolio.
+
+### 4. Study the result
+
+Use **Risk Analysis** to understand drawdown, volatility, beta, VaR, and correlations. Use **Signals & Backtesting** to compare SMA and RSI rules with buy-and-hold.
+
+### 5. Inspect the source data
+
+Use **Data Explorer** to filter tickers, view price history, inspect cleaned OHLCV rows, and download a CSV.
+
+## What makes it useful?
+
+Portfolio Lab combines a practical trading interface with transparent analytics:
+
+- Orders are simulated and persisted in SQLite.
+- Every price row records whether it came from the supplied synthetic dataset or Yahoo Finance.
+- Backtests execute signals at the next open to avoid look-ahead bias.
+- The direction model is evaluated on a chronological hold-out set.
+- The app explains limitations instead of presenting historical results as predictions.
 
 | Area | Included |
 | --- | --- |
@@ -41,6 +78,8 @@ Portfolio Lab combines a practical trading interface with transparent analytics.
 ## Contents
 
 - [Screenshots](#screenshots)
+- [Start here](#start-here)
+- [What makes it useful?](#what-makes-it-useful)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
@@ -70,18 +109,27 @@ The screenshots below use the refreshed application views in [`docs/screenshots/
 | Signals | <a href="docs/screenshots/04-signals.png"><img src="docs/screenshots/04-signals.png" alt="Signals page" width="360"></a> | SMA/RSI markers, next-open backtest vs buy-and-hold, next-day direction model |
 | Data Explorer | <a href="docs/screenshots/05-data-explorer.png"><img src="docs/screenshots/05-data-explorer.png" alt="Data Explorer page" width="360"></a> | Filtered prices, CSV export, data-quality report |
 
-## Features
+## Features at a glance
 
-- **Virtual trading:** buy and sell NSE stocks with ₹10,00,000 of virtual cash. Each order checks cash or shares, charges brokerage, and commits the trade and cash change in one SQLite transaction.
-- **Portfolio accounting:** moving weighted-average cost with buy fees in the cost basis, realised and unrealised P&L, day P&L, allocation weights.
-- **Risk analytics:** annualised volatility, Sharpe, beta vs NIFTY 50, maximum drawdown, historical 95% VaR, correlation heatmap.
-- **Signals and backtest:** SMA 20/50 crossover and RSI 14 thresholds, executed at the next open and compared with buy-and-hold.
-- **ML evaluation:** logistic-regression next-day direction model scored on a later, held-out period and shown beside a majority-class baseline.
-- **Data quality:** cleaning report, provenance column on every price row, CSV export. Supplied synthetic data and real downloaded data are never blended.
-- **Safeguards:** simulation warning on every page, annualised metrics withheld below 252 observations.
-- **Responsive workspace:** a compact sidebar links Overview, Dashboard, Virtual Trading, Risk Analysis, Signals & Backtesting, and Data Explorer. It becomes a native Streamlit drawer on smaller screens.
+| Page | What you can do |
+| --- | --- |
+| **Overview** | Understand the workspace and jump to a workflow |
+| **Dashboard** | Track portfolio value, cash, P&L, holdings, allocation, and market movers |
+| **Virtual Trading** | Simulate buy and sell orders with validation, brokerage, and transaction history |
+| **Risk Analysis** | Explore volatility, Sharpe, beta, drawdown, VaR, exposure, and correlations |
+| **Signals & Backtesting** | Compare SMA 20/50 and RSI 14 against buy-and-hold |
+| **Data Explorer** | Search tickers, chart prices, inspect cleaned rows, and export filtered data |
 
-## Tech Stack
+### Built-in safeguards
+
+- Simulation warnings remain visible on every page.
+- Buys cannot exceed available cash.
+- Sells cannot exceed available shares.
+- Invalid OHLC rows are repaired or rejected before database insertion.
+- Annualised risk metrics are withheld when there are fewer than 252 observations.
+- Synthetic data and downloaded market data are never blended.
+
+## Under the hood
 
 | Layer | Tools |
 | --- | --- |
@@ -151,6 +199,15 @@ Generated at run time and git-ignored: `data/portfolio.db`, `data/market_cache.c
 
 ## Quick Start
 
+### Prerequisites
+
+- Python 3.11
+- Git
+- Internet access for the Yahoo Finance download path
+- Docker Desktop instead of Python if you prefer the container workflow
+
+The app also works without network access by using the supplied synthetic dataset. In that mode, the interface clearly labels the data as synthetic and short-window risk/ML metrics may be unavailable.
+
 ### Docker (any OS)
 
 ```bash
@@ -193,6 +250,25 @@ streamlit run app/main.py
 ```
 
 `python -m src.data_pipeline` downloads about five years of history from Yahoo Finance. Add `--no-download` to use an existing cache or the supplied synthetic CSV without any network request. Delete `data/portfolio.db` and rerun the pipeline to reset the virtual portfolio.
+
+### Run with synthetic data only
+
+Use this when you want a deterministic local demo or do not have network access:
+
+```bash
+python -m src.data_pipeline --no-download
+python -m src.signals
+streamlit run app/main.py
+```
+
+### A simple demo walkthrough
+
+1. Open **Dashboard** and note the starting virtual cash.
+2. Open **Virtual Trading**, buy one share of a ticker, and review the brokerage and transaction history.
+3. Return to **Dashboard** to see the holding and portfolio value update.
+4. Open **Risk Analysis** to inspect the current-exposure scenario.
+5. Open **Signals & Backtesting** and switch between SMA 20/50 and RSI 14.
+6. Open **Data Explorer** to filter the same ticker and download its rows.
 
 ## Interface and Navigation
 
